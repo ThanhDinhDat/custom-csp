@@ -5,7 +5,9 @@ import cPickle
 import numpy as np
 from scipy import io as scio
 import time
-import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('agg')
+from matplotlib import pyplot as plt
 import re
 
 root_dir = 'data/cityperson'
@@ -25,6 +27,7 @@ for type in types:
 	box_count = 0
 	for l in range(len(annos[index][0])):
 		anno = annos[index][0][l]
+		print(anno)
 		cityname = anno[0][0][0][0].encode()
 		imgname = anno[0][0][1][0].encode()
 		gts = anno[0][0][2]
