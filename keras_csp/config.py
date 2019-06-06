@@ -25,3 +25,7 @@ class Config(object):
 
 		# image channel-wise mean to subtract, the order is BGR
 		self.img_channel_mean = [103.939, 116.779, 123.68]
+
+		# Resume training
+		self.resume = True
+		self.checkpoint = 'output/valmodels/city/h/off/first-train/net_e31_l0.00859501470235.hdf5'

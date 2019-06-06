@@ -13,11 +13,11 @@ from keras_csp import losses as losses
 
 # get the config parameters
 C = config.Config()
-C.gpu_ids = '0,1,2,3'
-C.onegpu = 2
+C.gpu_ids = '0'
+C.onegpu = 1
 C.size_train = (640,1280)
 C.init_lr = 2e-4
-C.num_epochs = 150
+C.num_epochs = 50
 C.offset = True
 
 num_gpu = len(C.gpu_ids.split(','))
@@ -50,6 +50,9 @@ if num_gpu>1:
     model = ParallelModel(model, int(num_gpu))
     model_stu = Model(img_input, preds)
 model_tea = Model(img_input, preds_tea)
+
+if C.resume:
+    weight_path = C.checkpoint
 
 model.load_weights(weight_path, by_name=True)
 model_tea.load_weights(weight_path, by_name=True)

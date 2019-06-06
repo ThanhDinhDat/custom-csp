@@ -1,4 +1,5 @@
 venv/
 data/
 keras_csp/*.pyc
-*.pyc
+**.pyc
+output/*
