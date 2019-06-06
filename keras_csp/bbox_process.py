@@ -23,7 +23,7 @@ def parse_det(Y, C, score=0.1, down=4,scale='h'):
             x1, y1 = max(0, (x_c[i]+0.5) * down - w / 2), max(0, (y_c[i]+0.5) * down - h / 2)
             boxs.append([x1, y1, min(x1 + w, C.size_test[1]), min(y1 + h, C.size_test[0]), s])
         boxs = np.asarray(boxs, dtype=np.float32)
-        keep = nms(boxs, 0.5, usegpu=False, gpu_id=0)
+        keep = nms(boxs, 0.5, usegpu=True, gpu_id=0)
         boxs = boxs[keep, :]
     return boxs
 
@@ -40,7 +40,7 @@ def parse_det_top(Y, C, score=0.1):
             x1, y1 = max(0, x_c[i] * 4 + 2 - w / 2), max(0, y_c[i] * 4 + 2)
             boxs.append([x1, y1, min(x1 + w, C.size_test[1]), min(y1 + h, C.size_test[0]), s])
         boxs = np.asarray(boxs, dtype=np.float32)
-        keep = nms(boxs, 0.5, usegpu=False, gpu_id=0)
+        keep = nms(boxs, 0.5, usegpu=True, gpu_id=0)
         boxs = boxs[keep, :]
     return boxs
 
@@ -57,7 +57,7 @@ def parse_det_bottom(Y, C, score=0.1):
             x1, y1 = max(0, x_c[i] * 4 + 2 - w / 2), max(0, y_c[i] * 4 + 2-h)
             boxs.append([x1, y1, min(x1 + w, C.size_test[1]), min(y1 + h, C.size_test[0]), s])
         boxs = np.asarray(boxs, dtype=np.float32)
-        keep = nms(boxs, 0.5, usegpu=False, gpu_id=0)
+        keep = nms(boxs, 0.5, usegpu=True, gpu_id=0)
         boxs = boxs[keep, :]
     return boxs
 
@@ -78,7 +78,7 @@ def parse_det_offset(Y, C, score=0.1,down=4):
             x1, y1 = max(0, (x_c[i] + o_x + 0.5) * down - w / 2), max(0, (y_c[i] + o_y + 0.5) * down - h / 2)
             boxs.append([x1, y1, min(x1 + w, C.size_test[1]), min(y1 + h, C.size_test[0]), s])
         boxs = np.asarray(boxs, dtype=np.float32)
-        keep = nms(boxs, 0.5, usegpu=False, gpu_id=0)
+        keep = nms(boxs, 0.5, usegpu=True, gpu_id=0)
         boxs = boxs[keep, :]
     return boxs
 

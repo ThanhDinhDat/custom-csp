@@ -7,7 +7,10 @@ from keras.models import Model
 from keras_csp import config, bbox_process
 from keras_csp.utilsfunc import *
 
-os.environ["CUDA_VISIBLE_DEVICES"] = '1'
+# parse the arguments
+args = config.parser_args()
+
+os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
 C = config.Config()
 C.offset = True
 cache_path = 'data/cache/cityperson/val_500'
@@ -41,35 +44,38 @@ else:
 if not os.path.exists(out_path):
 	os.makedirs(out_path)
 files = sorted(os.listdir(w_path))
-# get the results from epoch 51 to epoch 150
-for w_ind in range(51,151):
-	for f in files:
-		if f.split('_')[0] == 'net' and int(f.split('_')[1][1:]) == w_ind:
-			cur_file = f
-			break
-	weight1 = os.path.join(w_path, cur_file)
-	print 'load weights from {}'.format(weight1)
-	model.load_weights(weight1, by_name=True)
-	res_path = os.path.join(out_path, '%03d'%int(str(w_ind)))
-	if not os.path.exists(res_path):
-		os.makedirs(res_path)
-	print res_path
-	res_file = os.path.join(res_path, 'val_det.txt')
-	res_all = []
-	start_time = time.time()
-	for f in range(num_imgs):
-		filepath = val_data[f]['filepath']
-		img = cv2.imread(filepath)
-		x_rcnn = format_img(img, C)
-		Y = model.predict(x_rcnn)
+# get the results from checkpoints
+if args.checkpoint:
+	weight_file = args.checkpoint
+else:
+	weight_file = os.path.join(w_path, files[-2]) # last file is records.txt
+w_index = int((weight_file.split('_')[1]).split('e')[1])
 
-		if C.offset:
-			boxes = bbox_process.parse_det_offset(Y, C, score=0.1,down=4)
-		else:
-			boxes = bbox_process.parse_det(Y, C, score=0.1, down=4, scale=C.scale)
-		if len(boxes)>0:
-			f_res = np.repeat(f+1, len(boxes), axis=0).reshape((-1, 1))
-			boxes[:, [2, 3]] -= boxes[:, [0, 1]]
-			res_all += np.concatenate((f_res, boxes), axis=-1).tolist()
-	np.savetxt(res_file, np.array(res_all), fmt='%6f')
-	print time.time() - start_time
+print 'load weights from {}'.format(weight_file)
+model.load_weights(weight_file, by_name=True)
+res_path = os.path.join(out_path, '%03d'%int(str(w_index)))
+if not os.path.exists(res_path):
+	os.makedirs(res_path)
+print res_path
+res_file = os.path.join(res_path, 'val_det.txt')
+res_all = []
+start_time = time.time()
+for f in range(num_imgs):
+	filepath = val_data[f]['filepath']
+	print(filepath)
+	img = cv2.imread(filepath)
+	x_rcnn = format_img(img, C)
+	Y = model.predict(x_rcnn)
+
+	if C.offset:
+		boxes = bbox_process.parse_det_offset(Y, C, score=0.1,down=4)
+	else:
+		boxes = bbox_process.parse_det(Y, C, score=0.1, down=4, scale=C.scale)
+	if len(boxes)>0:
+		print(boxes)
+		f_res = np.repeat(f+1, len(boxes), axis=0).reshape((-1, 1))
+		boxes[:, [2, 3]] -= boxes[:, [0, 1]]
+		res_all += np.concatenate((f_res, boxes), axis=-1).tolist()
+	break
+np.savetxt(res_file, np.array(res_all), fmt='%6f')
+print time.time() - start_time

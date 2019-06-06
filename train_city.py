@@ -11,14 +11,23 @@ from keras.models import Model
 from keras_csp import config, data_generators
 from keras_csp import losses as losses
 
+# parse the arguments
+args = config.parser_args()
+
 # get the config parameters
 C = config.Config()
 C.gpu_ids = '0'
 C.onegpu = 1
 C.size_train = (640,1280)
 C.init_lr = 2e-4
-C.num_epochs = 50
+if args.num_epochs:
+    C.num_epochs = args.num_epochs
+else:
+    C.num_epochs = 50
 C.offset = True
+C.output_dir=args.output_dir
+C.checkpoints=args.checkpoint
+
 
 num_gpu = len(C.gpu_ids.split(','))
 batchsize = C.onegpu * num_gpu
@@ -51,14 +60,31 @@ if num_gpu>1:
     model_stu = Model(img_input, preds)
 model_tea = Model(img_input, preds_tea)
 
-if C.resume:
-    weight_path = C.checkpoint
+#resume latest training model
+if C.offset:
+    w_path = 'output/valmodels/city/%s/off' % (C.scale)
+else:
+    w_path = 'output/valmodels/city/%s/nooff' % (C.scale)
+files = sorted(os.listdir(w_path))
+
+if C.checkpoints:
+    weight_path = C.checkpoints
+    print 'load weights from {}'.format(weight_path)
+elif len(files) > 1 and files[-2].split('_')[0] == 'net': # last file is record.txt
+    latest_weight_file = files[-2]
+    weight_path = os.path.join(w_path, latest_weight_file)
+    print 'load weights from {}'.format(weight_path)
+else:
+    print('No checkpoints found')
 
 model.load_weights(weight_path, by_name=True)
 model_tea.load_weights(weight_path, by_name=True)
 print 'load weights from {}'.format(weight_path)
 
-if C.offset:
+# define output directory
+if C.output_dir:
+    out_path = C.output_dir
+elif C.offset:
     out_path = 'output/valmodels/city/%s/off' % (C.scale)
 else:
     out_path = 'output/valmodels/city/%s/nooff' % (C.scale)
@@ -78,16 +104,22 @@ else:
 
 epoch_length = int(C.iter_per_epoch/batchsize)
 iter_num = 0
-add_epoch = 0
+# get resume epoch number
+start_epoch = 0
+if C.checkpoints:
+    weight_file = C.checkpoints.split('/')[-1]
+    start_epoch = int((weight_file.split('_')[1]).split('e')[1])
+elif len(files) > 1 and files[-2].split('_')[0] == 'net':
+    start_epoch = int((files[-2].split('_')[1]).split('e')[1])
 losses = np.zeros((epoch_length, 3))
 
 best_loss = np.Inf
 print('Starting training with lr {} and alpha {}'.format(C.init_lr, C.alpha))
 start_time = time.time()
 total_loss_r, cls_loss_r1, regr_loss_r1, offset_loss_r1 = [], [], [], []
-for epoch_num in range(C.num_epochs):
+for epoch_num in range(start_epoch, C.num_epochs):
     progbar = generic_utils.Progbar(epoch_length)
-    print('Epoch {}/{}'.format(epoch_num + 1 + add_epoch, C.num_epochs + C.add_epoch))
+    print('Epoch {}/{}'.format('%04d'%(epoch_num + 1), C.num_epochs))
     while True:
         try:
             X, Y = next(data_gen_train)
@@ -133,7 +165,7 @@ for epoch_num in range(C.num_epochs):
                 if total_loss < best_loss:
                     print('Total loss decreased from {} to {}, saving weights'.format(best_loss, total_loss))
                     best_loss = total_loss
-                model_tea.save_weights(os.path.join(out_path, 'net_e{}_l{}.hdf5'.format(epoch_num + 1 + add_epoch, total_loss)))
+                model_tea.save_weights(os.path.join(out_path, 'net_e{}_l{}.hdf5'.format('%04d'%(epoch_num + 1 + add_epoch), total_loss)))
                 break
         except Exception as e:
             print ('Exception: {}'.format(e))

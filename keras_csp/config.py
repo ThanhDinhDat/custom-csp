@@ -1,3 +1,19 @@
+import os
+import argparse
+import configparser
+
+
+def parser_args():
+	parser = argparse.ArgumentParser(description='Options to run the network.')
+	parser.add_argument('--output_dir', type=str, default='',
+						help='output directory to save checkpoints')
+	parser.add_argument('--num_epochs', type=int, default=100,
+						help='number of training epoch')
+	parser.add_argument('-g', '--gpu', type=str, default='0',
+						help='the device id of gpu.')
+	parser.add_argument('--checkpoint', type=str, default='',
+                        help='it is a specific net_exx_lxx, the system will load it for testing.')
+	return parser.parse_args()
 
 class Config(object):
 	def __init__(self):
@@ -27,5 +43,7 @@ class Config(object):
 		self.img_channel_mean = [103.939, 116.779, 123.68]
 
 		# Resume training
-		self.resume = True
-		self.checkpoint = 'output/valmodels/city/h/off/first-train/net_e31_l0.00859501470235.hdf5'
+		self.checkpoint = None
+
+		# Directories
+		self.output_dir = None
